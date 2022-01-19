@@ -1,73 +1,37 @@
 <?php
+
+
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Author;
 
-class AuthorController extends Controller
-{
+class AuthorController extends Controller {
     public function index()
     {
-        $items = Author::all();
-        return view('index', ['items' => $items]);
+        $user = Auth::user();
+        $items = Author::paginate(4);
+        $param = ['items' => $items, 'user' =>$user];
+        return view('index', $param);
     }
-    public function find()
+
+    public function check(Request $request)
     {
-        return view('find', ['input' => '']);
+    $text = ['text' => 'ログインして下さい。'];
+    return view('auth', $text);
     }
-    public function search(Request $request)
+
+    public function checkUser(Request $request)
     {
-        $item = Author::where('name', 'LIKE',"%{$request->input}%")->first();
-        $param = [
-            'input' => $request->input,
-            'item' => $item
-        ];
-        return view('find', $param);
+    $email = $request->email;
+    $password = $request->password;
+    if (Auth::attempt(['email' => $email,
+            'password' => $password])) {
+        $text =   Auth::user()->name . 'さんがログインしました';
+    } else {
+        $text = 'ログインに失敗しました';
     }
-    public function bind(Author $author)
-    {
-        $data = [
-            'item'=>$author,
-        ];
-        return view('author.binds', $data);
+    return view('auth', ['text' => $text]);
     }
-    public function add()
-    {
-        return view('add');
-    }
-    public function create(Request $request)
-    {
-        $this->validate($request, Author::$rules);
-        $form = $request->all();
-        Author::create($form);
-        return redirect('/');
-    }
-    public function edit(Request $request)
-    {
-        $author = Author::find($request->id);
-        return view('edit', ['form' => $author]);
-    }
-    public function update(Request $request)
-    {
-        $this->validate($request, Author::$rules);
-        $form = $request->all();
-        unset($form['_token']);
-        Author::where('id', $request->id)->update($form);
-        return redirect('/');
-    }
-    public function delete(Request $request)
-    {
-        $author = Author::find($request->id);
-        return view('delete', ['form' => $author]);
-    }
-    public function remove(Request $request)
-    {
-        Author::find($request->id)->delete();
-        return redirect('/');
-    }
-    public function relate(Request $request) //追記
-    {
-        $items = Author::all();
-        return view('author.index', ['items' => $items]);
-    }
-}
+} 
